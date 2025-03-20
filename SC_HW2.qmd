@@ -1,0 +1,88 @@
+---
+title: "SC_HW2"
+author: "R26135014_潘皓心"
+format: html
+editor: visual
+---
+
+## Variable Definition:
+
+According to the "primary_data_meta.txt", the detailed data coding book is presented in Figure 1.
+
+| Variable | Data Type | Definition | Note |
+|--------------|----------|--------------------------|-----------------------|
+| family | nominal | Name of the family of mushroom species (multinomial) |  |
+| name | nominal | Name of the mushroom species (multinomial) |  |
+| class | nominal | The class of the mushroom species (binary) | poisonous=p, edibile=e |
+| cap-diameter | metrical | Diameter of the cap in cm | \[min., max.\] or \[mean\] |
+| cap-shape | nominal | Shapes of the cap | bell=b, conical=c, convex=x, flat=f, sunken=s, spherical=p, others=o |
+| cap-surface | nominal | Types of the surface of the cap | fibrous=i, grooves=g, scaly=y, smooth=s, shiny=h, leathery=l, silky=k, sticky=t, wrinkled=w, fleshy=e |
+| cap-color | nominal | Colors of the cap | brown=n, buff=b, gray=g, green=r, pink=p, purple=u, red=e, white=w, yellow=y, blue=l, orange=o, black=k |
+| does-bruise-bleed | nominal | Indicates bruising or bleeding or no | bruises-or-bleeding=t,no=f |
+| gill-attachment | nominal | Types of gill attachment | adnate=a, adnexed=x, decurrent=d, free=e, sinuate=s, pores=p, none=f, unknown=? |
+| gill-spacing | nominal | Spacing options of gill | close=c, distant=d, none=f |
+| gill-color | nominal | Gill color aligns with cap color plus none | see cap-color + none=f |
+| stem-height | metrical | Height of the stem in cm | \[min., max.\] or \[mean\] |
+| stem-width | metrical | Width of the stem in mm | \[min., max.\] or \[mean\] |
+| stem-root | nominal | Root types of stem | bulbous=b, swollen=s, club=c, cup=u, equal=e, rhizomorphs=z, rooted=r |
+| stem-surface | nominal | Surface type of stem aligns with cap surface plus none | see cap-surface + none=f |
+| stem-color | nominal | Stem color aligns with cap color plus none | see cap-color + none=f |
+| veil-type | nominal | Types of veil | partial=p, universal=u |
+| veil-color | nominal | Veil color aligns with cap color plus none | see cap-color + none=f |
+| has-ring | nominal | Indicates presence of a ring or none | ring=t, none=f |
+| ring-type | nominal | Types of ring | cobwebby=c, evanescent=e, flaring=r, grooved=g, large=l, pendant=p, sheathing=s, zone=z, scaly=y, movable=m, none=f, unknown=? |
+| spore-print-color | nominal | Color of spore print aligns with cap color | see cap color |
+| habitat | nominal | Habitat types | grasses=g, leaves=l, meadows=m, paths=p, heaths=h, urban=u, waste=w, woods=d |
+| season | nominal | Seasons | spring=s, summer=u, autumn=a, winter=w |
+
+##### Figure 1
+
+```{r}
+# 資料整理
+library(readr) ; library(dplyr) ; library(tidyr) ; library(stringr)
+dt <- read_delim("primary_data.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+
+# Convert into nominal
+dt <- dt %>% mutate(across(-c(family, name, `cap-diameter`, `stem-height`, `stem-width`), as.factor))
+
+# 處理 metrical 變數
+dt <- dt %>% mutate(
+    # cap-diameter
+    cap_diameter_min = ifelse(grepl(",", `cap-diameter`), as.numeric(str_extract(`cap-diameter`, "(?<=\\[)\\d+\\.?\\d*")), NA),
+    cap_diameter_max = ifelse(grepl(",", `cap-diameter`), as.numeric(str_extract(`cap-diameter`, "(?<=, )\\d+\\.?\\d*")), NA),
+    cap_diameter_mean = as.numeric(str_extract(`cap-diameter`, "\\d+\\.?\\d*")),
+
+    # stem-height
+    stem_height_min = ifelse(grepl(",", `stem-height`), as.numeric(str_extract(`stem-height`, "(?<=\\[)\\d+\\.?\\d*")), NA),
+    stem_height_max = ifelse(grepl(",", `stem-height`), as.numeric(str_extract(`stem-height`, "(?<=, )\\d+\\.?\\d*")), NA),
+    stem_height_mean = as.numeric(str_extract(`stem-height`, "\\d+\\.?\\d*")),
+
+    # stem-width
+    stem_width_min = ifelse(grepl(",", `stem-width`), as.numeric(str_extract(`stem-width`, "(?<=\\[)\\d+\\.?\\d*")), NA),
+    stem_width_max = ifelse(grepl(",", `stem-width`), as.numeric(str_extract(`stem-width`, "(?<=, )\\d+\\.?\\d*")), NA),
+    stem_width_mean = as.numeric(str_extract(`stem-width`, "\\d+\\.?\\d*")))
+
+# Remove the original 'cap-diameter', 'stem-height', and 'stem-width' columns
+dt <- dt %>% select(-c(`cap-diameter`, `stem-height`, `stem-width`))
+
+# Check the structure of the updated dataset
+str(dt)
+head(dt)
+```
+
+## Data Description:
+
+In this dataset, 44.5% of edibile class of the mushroom species, while 55.5% of poisonous class of the mushroom species.
+
+```{r}
+library(summarytools) ; library(Hmisc)
+describe(dt)
+dfSummary(dt, graph.col = TRUE) %>% print(method = "render")
+```
+
+## Table 1:
+
+```{r}
+library(table1)
+table1(~ cap_diameter_min+cap_diameter_max+cap_diameter_mean+`cap-shape`+`Cap-surface`+`cap-color`+`does-bruise-or-bleed`+`gill-attachment`+`gill-spacing`+`gill-spacing`+`gill-color`+stem_height_min+stem_height_max+stem_height_mean+stem_width_min+stem_width_max+stem_width_mean+`stem-root`+`stem-surface`+`stem-color`+`veil-type`+`veil-color`+`has-ring`+`ring-type`+`Spore-print-color`+habitat+season | class, data = dt)
+```
